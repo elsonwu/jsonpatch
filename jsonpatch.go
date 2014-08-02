@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
-	"strconv"
 	"strings"
 )
 
@@ -17,9 +16,9 @@ const (
 // it support add / replace / remove only
 // don't support test / move / copy
 type Patch struct {
-	Op    string `json:"op"`
-	Path  string `json:"path"`
-	Value string `json:"value"`
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
 }
 
 func FindField(m interface{}, opt Patch) (f reflect.Value, err error) {
@@ -30,11 +29,7 @@ func FindField(m interface{}, opt Patch) (f reflect.Value, err error) {
 		refT = refT.Elem()
 	}
 
-	fields := strings.Split(opt.Path, "/")
-	if 1 < len(fields) {
-		fields = fields[1:]
-	}
-
+	fields := strings.Split(strings.Trim(opt.Path, "/"), "/")
 	find := false
 	for _, fname := range fields {
 		n := refT.NumField()
@@ -70,35 +65,141 @@ func Do(f reflect.Value, opt Patch) (err error) {
 	switch f.Kind() {
 	case reflect.Struct:
 		v := reflect.New(f.Type()).Interface()
-		err = json.Unmarshal([]byte(opt.Value), v)
-		if err == nil {
+		if opt.Op == OP_REPLACE || opt.Op == OP_ADD {
+			if jsv, er := json.Marshal(opt.Value); er == nil {
+				err = json.Unmarshal(jsv, v)
+				if err == nil {
+					f.Set(reflect.ValueOf(v).Elem())
+				}
+
+			} else {
+				return er
+			}
+		} else if opt.Op == OP_REMOVE {
 			f.Set(reflect.ValueOf(v).Elem())
+		} else {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
 		}
+
+	case reflect.Interface:
+		v := reflect.New(f.Type()).Interface()
+		if opt.Op == OP_REPLACE || opt.Op == OP_ADD {
+			if jsv, er := json.Marshal(opt.Value); er == nil {
+				err = json.Unmarshal(jsv, v)
+				if err == nil {
+					f.Set(reflect.ValueOf(v).Elem())
+				}
+
+			} else {
+				return er
+			}
+		} else if opt.Op == OP_REMOVE {
+			f.Set(reflect.ValueOf(v).Elem())
+		} else {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
+		}
+
+	case reflect.Map:
+		v := reflect.New(f.Type()).Interface()
+		if opt.Op == OP_REPLACE || opt.Op == OP_ADD {
+			if jsv, er := json.Marshal(opt.Value); er == nil {
+				err = json.Unmarshal(jsv, v)
+				if err == nil {
+					f.Set(reflect.ValueOf(v).Elem())
+				}
+
+			} else {
+				return er
+			}
+		} else if opt.Op == OP_REMOVE {
+			f.Set(reflect.ValueOf(v).Elem())
+		} else {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
+		}
+
 	case reflect.Slice, reflect.Array:
 		v := reflect.New(f.Type()).Interface()
-		err = json.Unmarshal([]byte(opt.Value), v)
-		if err == nil {
+		if opt.Op == OP_REPLACE || opt.Op == OP_ADD {
+			if jsv, er := json.Marshal(opt.Value); er == nil {
+				err = json.Unmarshal(jsv, v)
+				if err == nil {
+					f.Set(reflect.ValueOf(v).Elem())
+				}
+
+			} else {
+				return er
+			}
+		} else if opt.Op == OP_REMOVE {
 			f.Set(reflect.ValueOf(v).Elem())
+		} else {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
 		}
+
 	case reflect.String:
-		f.SetString(opt.Value)
+		if opt.Op == OP_REPLACE || opt.Op == OP_ADD {
+			if str, ok := opt.Value.(string); ok {
+				f.SetString(str)
+			} else {
+				return errors.New(opt.Path + " must be string ")
+			}
+		} else if opt.Op == OP_REMOVE {
+			f.SetString("")
+		} else {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
+		}
 	case reflect.Bool:
-		if boolean, er := strconv.ParseBool(opt.Value); er == nil {
+		if opt.Op != OP_REPLACE && opt.Op != OP_ADD {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
+		}
+
+		if boolean, ok := opt.Value.(bool); ok {
 			f.SetBool(boolean)
 		} else {
-			err = er
+			return errors.New(opt.Path + " must be boolean")
 		}
 	case reflect.Float32, reflect.Float64:
-		if float, er := strconv.ParseFloat(opt.Value, 64); er == nil {
-			f.SetFloat(float)
+		if opt.Op != OP_REPLACE && opt.Op != OP_ADD {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
+		}
+
+		if float1, ok := opt.Value.(float64); ok {
+			f.SetFloat(float1)
+		} else if float2, ok := opt.Value.(float32); ok {
+			f.SetFloat(float64(float2))
+		} else if i, ok := opt.Value.(int); ok {
+			f.SetFloat(float64(i))
+		} else if i8, ok := opt.Value.(int8); ok {
+			f.SetFloat(float64(i8))
+		} else if i16, ok := opt.Value.(int16); ok {
+			f.SetFloat(float64(i16))
+		} else if i32, ok := opt.Value.(int32); ok {
+			f.SetFloat(float64(i32))
+		} else if i64, ok := opt.Value.(int64); ok {
+			f.SetFloat(float64(i64))
 		} else {
-			err = er
+			return errors.New(opt.Path + " must be float")
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if i, er := strconv.ParseInt(opt.Value, 10, 64); er == nil {
-			f.SetInt(i)
+		if opt.Op != OP_REPLACE && opt.Op != OP_ADD {
+			return errors.New(opt.Path + " unsupport op " + opt.Op)
+		}
+
+		if float, ok := opt.Value.(float64); ok {
+			f.SetInt(int64(float))
+		} else if float2, ok := opt.Value.(float32); ok {
+			f.SetInt(int64(float2))
+		} else if i, ok := opt.Value.(int); ok {
+			f.SetInt(int64(i))
+		} else if i8, ok := opt.Value.(int8); ok {
+			f.SetInt(int64(i8))
+		} else if i16, ok := opt.Value.(int16); ok {
+			f.SetInt(int64(i16))
+		} else if i32, ok := opt.Value.(int32); ok {
+			f.SetInt(int64(i32))
+		} else if i64, ok := opt.Value.(int64); ok {
+			f.SetInt(i64)
 		} else {
-			err = er
+			return errors.New(opt.Path + " must be int")
 		}
 	}
 
