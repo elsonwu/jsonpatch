@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/elsonwu/jsonpatch"
@@ -49,22 +48,7 @@ var jsonOps = `[
 
 func main() {
 	dd := new(d)
-	ops := []jsonpatch.Patch{}
-	if err := json.Unmarshal([]byte(jsonOps), &ops); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	for _, opt := range ops {
-		if f, err := jsonpatch.FindField(dd, opt); err == nil {
-			if e := jsonpatch.Do(f, opt); e != nil {
-				fmt.Printf("[ERROR Do] -----> %#v\n", e)
-			}
-		} else {
-			fmt.Printf("[ERROR FindField] -----> %#v\n", err)
-		}
-	}
-
-	fmt.Printf("%#v \n", dd)
+	err := jsonpatch.Run(jsonOps, dd)
+	fmt.Printf("%#v, %#v \n", dd, err)
 	return
 }
