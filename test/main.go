@@ -6,8 +6,6 @@ import (
 	"github.com/elsonwu/jsonpatch"
 )
 
-var js = `{ "foo": "bar" }`
-
 type d struct {
 	Foo  string `json:"foo"`
 	User struct {
