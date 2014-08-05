@@ -10,7 +10,7 @@ func Run(jsonPos string, model interface{}) error {
 
 	for _, opt := range ops {
 		f, err := FindField(model, opt)
-		if err != nil {
+		if !f.IsValid() && err != nil {
 			return err
 		}
 
