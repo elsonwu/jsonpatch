@@ -1,15 +1,17 @@
 jsonpatch
 =========
 
-To handle json PATCH request
+To handle json PATCH request 
 
 ###Json request:
 
-    [
-        { "op": "remove", "path": "/a/b/c" },
-        { "op": "add", "path": "/a/b/c", "value": [ "foo", "bar" ] },
-        { "op": "replace", "path": "/a/b/c", "value": 42 }
-    ]
+```
+[
+    { "op": "remove", "path": "/a/b/c" },
+    { "op": "add", "path": "/a/b/c", "value": [ "foo", "bar" ] },
+    { "op": "replace", "path": "/a/b/c", "value": 42 }
+]
+```
 
 Now only support op=`remove`, `replace` and `add`
 
@@ -46,3 +48,9 @@ Below json will not work:
 ### Example
 
 Please read `test/main.go`
+
+### More
+
+Please read this standard
+
+[https://tools.ietf.org/html/rfc6902](https://tools.ietf.org/html/rfc6902)
