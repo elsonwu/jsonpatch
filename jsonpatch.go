@@ -33,7 +33,7 @@ func findStructField(refV reflect.Value, fieldName string) (f reflect.Value, err
 		}
 	}
 
-	return f, errors.New("field " + fieldName + "does not exist")
+	return reflect.Value{}, errors.New("field " + fieldName + " does not exist")
 }
 
 func findMapField(refV reflect.Value, fieldName string) (f reflect.Value, err error) {

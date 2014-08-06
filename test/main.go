@@ -63,7 +63,7 @@ var jsonOps = `[
 
 func main() {
 	dd := new(d)
-	err := jsonpatch.Run(jsonOps, dd)
+	err := jsonpatch.Run([]byte(jsonOps), dd)
 	fmt.Printf("%#v \n\n[error] %#v \n", dd, err)
 	return
 }
