@@ -14,6 +14,10 @@ const (
 	OP_REPLACE = "replace"
 )
 
+var FieldTags = []string{
+	"json",
+}
+
 // it support add / replace / remove only
 // don't support test / move / copy
 type Patch struct {
@@ -28,8 +32,14 @@ func findStructField(refV reflect.Value, fieldName string) (f reflect.Value, err
 	for i := 0; i < nf; i++ {
 		f = refV.Field(i)
 		ft := t.Field(i)
-		if ft.Name == fieldName || ft.Tag.Get("json") == fieldName {
+		if ft.Name == fieldName {
 			return f, nil
+		}
+
+		for _, tag := range FieldTags {
+			if ft.Tag.Get(tag) == fieldName {
+				return f, nil
+			}
 		}
 	}
 
